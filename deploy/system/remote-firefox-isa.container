@@ -1,0 +1,27 @@
+[Unit]
+Description=Remote Firefox for isa
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=localhost/remote-firefox:latest
+ContainerName=remote-firefox-isa
+PublishPort=127.0.0.1:6080:6080
+Volume=remote-firefox-isa-profile:/config
+User=1000:1000
+ShmSize=1g
+NoNewPrivileges=true
+DropCapability=all
+AddCapability=SYS_CHROOT
+HealthOnFailure=kill
+Environment=START_URL=https://chatgpt.com
+Environment=SCREEN_SIZE=1440x900x24
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=900
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target

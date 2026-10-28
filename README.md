@@ -51,6 +51,43 @@ setzen. Andernfalls wird `ghcr.io/sebx2club/remote-firefox:latest` verwendet.
 Die GHCR-Paket-Sichtbarkeit muss nach dem ersten Publish einmal auf **Public**
 gesetzt werden, damit der Server ohne Registry-Login pullen kann.
 
+## Zwei systemweite Browser-Dienste
+
+Unter `deploy/system/` liegen zwei unabhängige Quadlets: `remote-firefox-isa`
+auf Host-Loopback-Port 6080 und `remote-firefox-sebastian` auf Port 6081.
+Sie verwenden eigene benannte Profilvolumes und dasselbe lokal gebaute Image.
+Diese Variante wird durch den systemweiten Podman verwaltet; die Prozesse im
+Container laufen weiterhin als UID 1000. Nicht gleichzeitig mit dem rootless
+Beispiel auf demselben Port betreiben.
+
+Auf einem x86-64-Server als root, nach dem Image-Build mit `podman build`:
+
+```sh
+install -m 644 deploy/system/*.container /etc/containers/systemd/
+systemctl daemon-reload
+systemctl start remote-firefox-isa.service remote-firefox-sebastian.service
+systemctl status remote-firefox-isa.service remote-firefox-sebastian.service
+```
+
+Autostart wird über `WantedBy=multi-user.target` erzeugt. Ein fehlschlagender
+Container-Healthcheck beendet den Container, worauf systemd ihn neu startet.
+Die Volume-Namen sind `remote-firefox-isa-profile` und
+`remote-firefox-sebastian-profile`. Für Updates das lokale Image neu bauen und
+beide Dienste neu starten. Das Profil bleibt jeweils erhalten.
+
+Vom Client beide Ports durch denselben SSH-Tunnel weiterleiten:
+
+```sh
+ssh -N -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:6080:127.0.0.1:6080 \
+  -L 127.0.0.1:6081:127.0.0.1:6081 benutzer@dein-server
+```
+
+Isa: <http://localhost:6080/vnc.html?autoconnect=1&resize=scale>.
+Sebastian: <http://localhost:6081/vnc.html?autoconnect=1&resize=scale>.
+Jede Person kann auch nur ihren eigenen Port weiterleiten. Die SSH-Anmeldung
+setzt ein bereits vorhandenes, berechtigtes Konto auf dem Server voraus.
+
 ## Vom Mac zugreifen
 
 ```sh
