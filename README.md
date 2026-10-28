@@ -4,10 +4,10 @@ Eigenes Alpine-Linux-Image mit Firefox, Xvfb, Openbox und noVNC. Gedacht für ei
 Linux-Server mit Podman (z. B. Rocky Linux), bedient vom Mac über einen SSH-Tunnel.
 Kein vollständiger Desktop, keine LinuxServer-Basis, keine eingebauten Zugangsdaten.
 
-## Lokal bauen
+## Auf dem x86-64-Linux-Server bauen
 
 ```sh
-podman build --format docker --pull --no-cache -t localhost/remote-firefox:latest .
+podman build --platform linux/amd64 --format docker --pull --no-cache -t localhost/remote-firefox:latest .
 podman run -d --name remote-firefox --shm-size=1g \
   --cap-drop=all --cap-add=sys_chroot --security-opt=no-new-privileges \
   -p 127.0.0.1:6080:6080 \
@@ -24,8 +24,9 @@ Vorhandene Volumes müssen für UID 1000 beschreibbar sein.
 
 Voraussetzung: Podman mit Quadlet-Unterstützung (mindestens 4.4), systemd als
 Benutzerdienst und aktivierte unprivilegierte User-Namespaces. Nutze einen eigenen
-Linux-Benutzer für den Browser. Die Paketveröffentlichung liefert zunächst ein
-Image für Linux/amd64; für andere Architekturen lokal bauen.
+Linux-Benutzer für den Browser. Build und Paketveröffentlichung laufen nativ auf einem x86-64-GitHub-Runner
+(`ubuntu-24.04`) mit explizitem Ziel `linux/amd64`. Die Architektur des Runners
+wird geprüft; es gibt keinen Mac-Build und keine QEMU-Emulation in der CI.
 
 ```sh
 mkdir -p ~/.config/containers/systemd
@@ -118,7 +119,7 @@ Profilsicherung bereithalten.
 
 ```sh
 bash -n container/*.sh tests/*.sh
-docker build --pull --no-cache -t remote-firefox:test .
+docker build --platform linux/amd64 --pull --no-cache -t remote-firefox:test .
 bash tests/smoke.sh remote-firefox:test
 # Mit Podman: CONTAINER_ENGINE=podman bash tests/smoke.sh localhost/remote-firefox:latest
 ```
