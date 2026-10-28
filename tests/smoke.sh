@@ -37,7 +37,8 @@ if "$engine" logs "$name" 2>&1 | grep -q 'Sandbox: chroot: EPERM'; then
     exit 1
 fi
 port=$("$engine" port "$name" 6080/tcp)
-curl --fail --silent "http://$port/vnc.html" >/dev/null
+curl --fail --silent "http://$port/vnc.html" | grep 'app/clipboard-helper.js' >/dev/null
+curl --fail --silent "http://$port/app/clipboard-helper.js" >/dev/null
 # Exercise the websocket proxy as well as the HTTP page and the VNC backend.
 python3 - "$port" <<'PY'
 import socket, sys

@@ -29,7 +29,8 @@ jobs:
           persist-credentials: false
       - name: Check shell syntax and configuration
         run: |
-          bash -n container/*.sh tests/*.sh
+          bash -n container/*.sh tests/*.sh deploy/system/remote-firefox-build
+          node --test tests/clipboard.test.cjs
           python3 -m json.tool renovate.json >/dev/null
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       - name: Build fresh packages

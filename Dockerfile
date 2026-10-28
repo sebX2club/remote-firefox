@@ -9,6 +9,8 @@ RUN apk upgrade --no-cache && apk add --no-cache \
 
 COPY --chmod=755 container/start.sh /usr/local/bin/start-browser
 COPY --chmod=755 container/healthcheck.sh /usr/local/bin/healthcheck
+COPY container/web/clipboard-helper.js /usr/share/novnc/app/clipboard-helper.js
+RUN sed -i 's@</body>@<script defer src="app/clipboard-helper.js"></script></body>@' /usr/share/novnc/vnc.html
 ENV HOME=/home/browser DISPLAY=:99 SCREEN_SIZE=1440x900x24 START_URL=https://chatgpt.com
 USER 1000:1000
 EXPOSE 6080

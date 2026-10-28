@@ -151,6 +151,18 @@ Loopback und wird nicht veröffentlicht. Keine Profilinhalte oder Cookies ins Re
 kopieren. Mikrofon, Audio und Kamera werden in dieser minimalen Lösung nicht
 weitergeleitet. `SCREEN_SIZE` und `START_URL` lassen sich in der Quadlet-Datei ändern.
 
+## Text auf den eigenen Rechner kopieren
+
+Im entfernten Firefox Text markieren und **Strg+C** drücken, auch wenn der
+Client ein Mac ist. Links in noVNC das Clipboard-Symbol öffnen. Der kopierte Text
+erscheint im Clipboard-Feld. Mit **Auf diesen Rechner kopieren** in die lokale
+Zwischenablage übernehmen und dann wie gewohnt einfügen.
+
+Wenn der Browser den Clipboard-Zugriff verweigert, markiert der Button den Text
+für manuelles Kopieren: auf dem Mac **⌘C**, unter Windows/Linux **Strg+C**.
+Die Zwischenablagen werden nicht automatisch synchronisiert. Diese Funktion
+überträgt Text, keine Bilder, Dateien oder Formatierung.
+
 ## Updates mit Renovate
 
 `renovate.json` verwaltet das Alpine-Basisimage und sämtliche GitHub Actions,
