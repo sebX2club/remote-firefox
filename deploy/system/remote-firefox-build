@@ -10,6 +10,8 @@ candidate=
 
 cleanup() {
     if [[ -n $candidate ]]; then podman image rm "$candidate" >/dev/null 2>&1 || true; fi
+    # Only discard unused, untagged images created by this helper.
+    podman image prune --force --filter label=org.sebx2club.remote-firefox.build=true >/dev/null 2>&1 || true
     if [[ -n $work ]]; then rm -rf -- "$work"; fi
 }
 fallback() {
@@ -36,10 +38,12 @@ timeout 180 git -c core.hooksPath=/dev/null clone --depth 1 --single-branch \
     --branch main "$repository" "$work/source"
 revision=$(git -C "$work/source" rev-parse HEAD)
 echo "Building remote Firefox from main at $revision on x86-64"
-timeout 1200 podman build --platform linux/amd64 --format docker --pull --no-cache \
+timeout 1200 podman build --platform linux/amd64 --format docker --pull --no-cache --layers=false --force-rm \
+    --label org.sebx2club.remote-firefox.build=true \
     --label "org.opencontainers.image.revision=$revision" \
     --label "org.opencontainers.image.source=$repository" \
     -t "$candidate" "$work/source"
 timeout 240 env CONTAINER_ENGINE=podman bash "$work/source/tests/smoke.sh" "$candidate"
+if podman image exists "$image"; then podman tag "$image" localhost/remote-firefox:previous; fi
 podman tag "$candidate" "$image"
 echo "Remote Firefox image ready: $revision"
