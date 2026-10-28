@@ -18,9 +18,10 @@ Environment=START_URL=https://chatgpt.com
 Environment=SCREEN_SIZE=1440x900x24
 
 [Service]
+ExecStartPre=/usr/local/sbin/remote-firefox-build
 Restart=always
 RestartSec=5
-TimeoutStartSec=900
+TimeoutStartSec=3600
 TimeoutStopSec=45
 
 [Install]

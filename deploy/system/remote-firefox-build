@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Installed as a root-owned executable; called by both Quadlet services.
+set -Eeuo pipefail
+umask 077
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+repository=${REMOTE_FIREFOX_REPOSITORY:-https://github.com/sebX2club/remote-firefox.git}
+image=localhost/remote-firefox:latest
+work=
+candidate=
+
+cleanup() {
+    if [[ -n $candidate ]]; then podman image rm "$candidate" >/dev/null 2>&1 || true; fi
+    if [[ -n $work ]]; then rm -rf -- "$work"; fi
+}
+fallback() {
+    local status=$1
+    trap - ERR
+    echo "Remote Firefox update failed (status $status)." >&2
+    if podman image exists "$image"; then
+        echo 'Starting the previously available image; see the journal for the update error.' >&2
+        exit 0
+    fi
+    echo 'No previous image is available; refusing to start.' >&2
+    exit "$status"
+}
+trap cleanup EXIT
+trap 'fallback "$?"' ERR
+
+[[ $(uname -m) == x86_64 ]]
+# Both browser services share the image. Never promote concurrent builds.
+exec 9>/run/lock/remote-firefox-build.lock
+flock -w 1500 9
+work=$(mktemp -d /var/tmp/remote-firefox-build.XXXXXXXX)
+candidate="localhost/remote-firefox:candidate-${work##*.}"
+timeout 180 git -c core.hooksPath=/dev/null clone --depth 1 --single-branch \
+    --branch main "$repository" "$work/source"
+revision=$(git -C "$work/source" rev-parse HEAD)
+echo "Building remote Firefox from main at $revision on x86-64"
+timeout 1200 podman build --platform linux/amd64 --format docker --pull --no-cache \
+    --label "org.opencontainers.image.revision=$revision" \
+    --label "org.opencontainers.image.source=$repository" \
+    -t "$candidate" "$work/source"
+timeout 240 env CONTAINER_ENGINE=podman bash "$work/source/tests/smoke.sh" "$candidate"
+podman tag "$candidate" "$image"
+echo "Remote Firefox image ready: $revision"

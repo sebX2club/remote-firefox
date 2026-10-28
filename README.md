@@ -60,9 +60,11 @@ Diese Variante wird durch den systemweiten Podman verwaltet; die Prozesse im
 Container laufen weiterhin als UID 1000. Nicht gleichzeitig mit dem rootless
 Beispiel auf demselben Port betreiben.
 
-Auf einem x86-64-Server als root, nach dem Image-Build mit `podman build`:
+Auf einem x86-64-Server als root (benötigt Git, Podman, Bash, Python 3, curl,
+`timeout` und `flock`):
 
 ```sh
+install -m 755 deploy/system/remote-firefox-build /usr/local/sbin/remote-firefox-build
 install -m 644 deploy/system/*.container /etc/containers/systemd/
 systemctl daemon-reload
 systemctl start remote-firefox-isa.service remote-firefox-sebastian.service
@@ -72,8 +74,38 @@ systemctl status remote-firefox-isa.service remote-firefox-sebastian.service
 Autostart wird über `WantedBy=multi-user.target` erzeugt. Ein fehlschlagender
 Container-Healthcheck beendet den Container, worauf systemd ihn neu startet.
 Die Volume-Namen sind `remote-firefox-isa-profile` und
-`remote-firefox-sebastian-profile`. Für Updates das lokale Image neu bauen und
-beide Dienste neu starten. Das Profil bleibt jeweils erhalten.
+`remote-firefox-sebastian-profile`.
+
+Jeder Start und Neustart holt `main` frisch aus dem öffentlichen Repository und
+baut das Image nativ für x86-64 mit aktuellen Alpine-Paketen ohne Build-Cache.
+Ein Lock verhindert gleichzeitige Builds der beiden Dienste. Vor dem Umschalten
+testet das Build-Skript das neue Image (Firefox-Rendering, HTTP, WebSocket/VNC,
+Benutzerrechte und sauberes Stoppen). Erst dann wird `latest` ersetzt.
+
+```sh
+systemctl restart remote-firefox-isa.service
+# oder unabhängig davon:
+systemctl restart remote-firefox-sebastian.service
+```
+
+Während des Builds ist der neu gestartete Browser nicht erreichbar; der andere
+Dienst läuft weiter. Das kann einige Minuten dauern. Auch automatische Neustarts
+und ein Serverstart führen diesen Build aus. Bei Netzwerk-, Build- oder Testfehlern
+wird das bisherige Image verwendet und der Fehler im Journal protokolliert.
+Ohne vorhandenes Image schlägt der Start fehl. Beide Profile bleiben erhalten.
+
+Die installierten Quadlets und das Build-Skript werden dabei nicht automatisch
+überschrieben; aktualisiert wird der gesamte Image-Build-Kontext inklusive
+Dockerfile und Container-Startskripten. Änderungen an der systemd-Integration
+müssen administrativ installiert werden. `main` ist damit eine Vertrauensgrenze:
+Wer dort Build-Code ändern kann, beeinflusst die auf dem Server ausgeführten
+Builds und Smoke-Tests.
+
+```sh
+journalctl -u remote-firefox-isa.service -n 100 --no-pager
+podman image inspect localhost/remote-firefox:latest \
+  --format '{{index .Labels "org.opencontainers.image.revision"}}'
+```
 
 Vom Client beide Ports durch denselben SSH-Tunnel weiterleiten:
 
