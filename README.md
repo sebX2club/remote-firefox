@@ -109,16 +109,8 @@ podman image inspect localhost/remote-firefox:latest \
   --format '{{index .Labels "org.opencontainers.image.revision"}}'
 ```
 
-Optional kann ein Administrator Isa nur die Wartung ihres eigenen Dienstes
-freigeben. Die Datei erlaubt feste Start-/Stop-/Restart-Befehle sowie Status und
-Logs ohne Pager; sie gewährt weder eine Root-Shell noch Zugriff auf den anderen
-Dienst. Vor Installation prüfen:
-
-```sh
-visudo -cf deploy/system/remote-firefox-isa.sudoers
-install -o root -g root -m 440 deploy/system/remote-firefox-isa.sudoers \
-  /etc/sudoers.d/remote-firefox-isa
-```
+Die systemweiten Dienste werden über den bestehenden Root-Zugang verwaltet.
+Es werden dafür keine zusätzlichen Host-Benutzer oder sudo-Rechte eingerichtet.
 
 Vom Client beide Ports durch denselben SSH-Tunnel weiterleiten:
 
