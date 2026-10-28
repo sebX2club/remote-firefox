@@ -1,0 +1,7 @@
+.git
+.github
+deploy
+tests
+*.md
+renovate.json
+LICENSE
