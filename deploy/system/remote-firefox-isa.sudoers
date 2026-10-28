@@ -1,0 +1,2 @@
+# Isa may manage only her own remote browser; no arbitrary root commands.
+isa ALL=(root) NOPASSWD: /usr/bin/systemctl start remote-firefox-isa.service, /usr/bin/systemctl stop remote-firefox-isa.service, /usr/bin/systemctl restart remote-firefox-isa.service, /usr/bin/systemctl --no-pager status remote-firefox-isa.service, /usr/bin/journalctl -u remote-firefox-isa.service -n 100 --no-pager

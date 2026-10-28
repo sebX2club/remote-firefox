@@ -93,6 +93,8 @@ Dienst läuft weiter. Das kann einige Minuten dauern. Auch automatische Neustart
 und ein Serverstart führen diesen Build aus. Bei Netzwerk-, Build- oder Testfehlern
 wird das bisherige Image verwendet und der Fehler im Journal protokolliert.
 Ohne vorhandenes Image schlägt der Start fehl. Beide Profile bleiben erhalten.
+Das vorherige Image bleibt als `localhost/remote-firefox:previous` erhalten;
+ungenutzte, ungetaggte Images dieses Build-Skripts werden aufgeräumt.
 
 Die installierten Quadlets und das Build-Skript werden dabei nicht automatisch
 überschrieben; aktualisiert wird der gesamte Image-Build-Kontext inklusive
@@ -105,6 +107,17 @@ Builds und Smoke-Tests.
 journalctl -u remote-firefox-isa.service -n 100 --no-pager
 podman image inspect localhost/remote-firefox:latest \
   --format '{{index .Labels "org.opencontainers.image.revision"}}'
+```
+
+Optional kann ein Administrator Isa nur die Wartung ihres eigenen Dienstes
+freigeben. Die Datei erlaubt feste Start-/Stop-/Restart-Befehle sowie Status und
+Logs ohne Pager; sie gewährt weder eine Root-Shell noch Zugriff auf den anderen
+Dienst. Vor Installation prüfen:
+
+```sh
+visudo -cf deploy/system/remote-firefox-isa.sudoers
+install -o root -g root -m 440 deploy/system/remote-firefox-isa.sudoers \
+  /etc/sudoers.d/remote-firefox-isa
 ```
 
 Vom Client beide Ports durch denselben SSH-Tunnel weiterleiten:
